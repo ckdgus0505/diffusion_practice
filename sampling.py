@@ -9,6 +9,9 @@ class Diffusion_model():
         self.alphas = torch.tensor(1-self.betas)
         self.alpha_bar = torch.tensor(np.cumprod(self.alphas))
 
+    def make_noise(shape):
+        return torch.randn(shape)
+
     def forward_process(self, x_0, t, noise=None):
         batch_size, n_point, _ = x_0.shape
         if noise == None:
@@ -18,10 +21,10 @@ class Diffusion_model():
         b = (1-self.alpha_bar[t])
         return a[:, None, None]*x_0+b[:, None, None]*noise
 
-    def forward_one(self, x, t, noise=None):
+    def forward_step(self, x, t, noise=None):
         batch_size, n_point, _ = x.shape
         if noise == None:
-            noise = torch.randn_like(x_0)
+            noise = torch.randn_like(x)
 
         a = torch.sqrt(1-self.betas[t])
         b = self.betas[t]

@@ -29,13 +29,22 @@ class MLP(pl.LightningModule):
         return self.layer(x_).view(-1, self.input_dim, 2)
 
     def training_step(self, batch, batch_idx):
-        opt = self.optimizers()
-        opt.zero_grad()
         t = torch.randint(1, self.time_step, [batch.shape[0]])
-        noise = torch.randn_like(batch)
-        x_t = self.diffusion.forward_process(batch, t, noise)
-        predicted_noise = self(x_t, t)
-        loss = F.smooth_l1_loss(noise, predicted_noise)
+        eps = Diffusion_model.make_noise(batch.shape)
+        x_t = self.diffusion.forward_process(batch, t, eps)
+        predicted_eps = self(x_t, t)
+        L = torch.sqrt(((eps-predicted_eps)**2).sum(2)).sum(-1)
+        loss, _ = torch.var_mean(L)
+        # loss = F.smooth_l1_loss(noise, predicted_noise)
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        t = torch.randint(1, self.time_step, [batch.shape[0]])
+        eps = Diffusion_model.make_noise(batch.shape)
+        x_t = self.diffusion.forward_process(batch, t, eps)
+        predicted_eps = self(x_t, t)
+        L = torch.sqrt(((eps-predicted_eps)**2).sum(2)).sum(-1)
+        loss, _ = torch.var_mean(L)
         return loss
 
     def configure_optimizers(self):
