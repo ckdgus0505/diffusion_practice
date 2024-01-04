@@ -8,12 +8,8 @@ dataset:
 
 model:
   time_step: 300
-  input_dim: ${dataset.n_sample}
+  input_dim: 400
   hidden_dim: 96
-
-optim:
-  name: "SGD"
-  lr: 1e-3
 
 trainer:
   epochs: 1000
