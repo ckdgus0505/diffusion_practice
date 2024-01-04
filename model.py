@@ -1,13 +1,16 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.optim import SGD
 import pytorch_lightning as pl
 from sampling import Diffusion_process
 
 class MLP(pl.LightningModule):
     def __init__(self, time_step, input_dim, hidden_dim):
         super().__init__()
+
+        self.training_step_outputs = 0
+        self.val_step_outputs = 0
+
         self.time_step = time_step
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
@@ -42,7 +45,12 @@ class MLP(pl.LightningModule):
         x_t = self.diffusion.forward_process(batch, t, eps)
         predicted_eps = self(x_t, t)
         loss = F.smooth_l1_loss(eps, predicted_eps)
+        self.training_step_outputs+=loss.item()
         return loss
+    
+    def on_train_epoch_end(self):
+        self.log("training_loss_epoch", self.training_step_outputs, on_step=False, on_epoch=True, prog_bar=True)
+        self.training_step_outputs=0
 
     def validation_step(self, batch, batch_idx):
         t = torch.randint(1, self.time_step, [batch.shape[0]])
@@ -50,8 +58,13 @@ class MLP(pl.LightningModule):
         x_t = self.diffusion.forward_process(batch, t, eps)
         predicted_eps = self(x_t, t)
         loss = F.smooth_l1_loss(eps, predicted_eps)
+        self.val_step_outputs+=loss.item()
         return loss
 
+    def on_validation_epoch_end(self):
+        self.log("validation_loss_epoch", self.val_step_outputs, on_step=False, on_epoch=True, prog_bar=True)
+        self.val_step_outputs=0
+
     def configure_optimizers(self):
-        optimizer = SGD(self.parameters(), lr=1e-3, momentum=0.9)
+        optimizer = torch.optim.AdamW(self.parameters())
         return optimizer

@@ -1,10 +1,10 @@
 dataset:
   n_sample: 400
   train_ds:
-    n_dataset: 1000
+    n_dataset: 51200
 
   valid_ds:
-    n_dataset: 100
+    n_dataset: 512
 
 model:
   time_step: 300
