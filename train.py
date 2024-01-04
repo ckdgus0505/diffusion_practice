@@ -32,7 +32,7 @@ def main():
     valid_loader = DataLoader(valid_set, batch_size=batch, drop_last=True, shuffle=True)
 
     trainer = pl.Trainer(max_epochs=epochs, check_val_every_n_epoch=1)
-    pl.fit(model, train_loader, valid_loader)
+    trainer.fit(model, train_loader, valid_loader)
 
 if __name__ == '__main__':
     main()

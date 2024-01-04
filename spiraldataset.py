@@ -29,7 +29,7 @@ class SpiralDataset(Dataset):
     if self.data_path is not None and save_data:
       return np.load(os.path.join(self.dir, str(idx)+'.npy'))
     else:
-      return spiral(self.n_sample):
+      return spiral(self.n_sample)
 
   def __len__(self):
     return self.n_dataset
