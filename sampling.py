@@ -2,12 +2,12 @@ import numpy as np
 import torch
 
 class Diffusion_model():
-    self.__init__(self, time_step):
+    def __init__(self, time_step):
         self.time_step = time_step
 
-        self.betas = torch.tensor(np.linspace(0,1,T+2))[:-1]
-        self.alphas = torch.tensor(1-betas)
-        self.alpha_bar = torch.tensor(np.cumprod(alphas))
+        self.betas = torch.tensor(np.linspace(0,1,self.time_step+2))[:-1]
+        self.alphas = torch.tensor(1-self.betas)
+        self.alpha_bar = torch.tensor(np.cumprod(self.alphas))
 
     def forward_process(self, x_0, t, noise=None):
         batch_size, n_point, _ = x_0.shape

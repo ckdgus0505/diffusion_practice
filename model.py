@@ -13,7 +13,7 @@ class MLP(pl.LightningModule):
         self.hidden_dim = hidden_dim
         self.diffusion = Diffusion_model(self.time_step)
 
-        self.time_emb = nn.Embedding(self.time_step, 2*input_dim)
+        self.time_emb = nn.Embedding(self.time_step, 2*self.input_dim)
 
         self.layer = nn.Sequential(
             nn.Linear(self.input_dim*2, self.hidden_dim),
@@ -25,7 +25,7 @@ class MLP(pl.LightningModule):
 
     def forward(self, x, t):
         t_ = self.time_emb(t)
-        x_ = x.view(-1, 2*input_dim)+t_
+        x_ = (x.view(-1, 2*self.input_dim)+t_).float()
         return self.layer(x_).view(-1, self.input_dim, 2)
 
     def training_step(self, batch, batch_idx):
