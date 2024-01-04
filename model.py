@@ -24,13 +24,14 @@ class MLP(pl.LightningModule):
         )
 
     def forward(self, x, t):
-        t_ = self.time_emb(t)
+        t_ = self.time_emb(torch.tensor(t))
         x_ = (x.view(-1, 2*self.input_dim)+t_).float()
         return self.layer(x_).view(-1, self.input_dim, 2)
 
-    def generate(self):
-        x_t = self.diffusion.make_noise(batch.shape)
+    def generate(self, N=1):
+        x_t = self.diffusion.make_noise([N, self.input_dim, 2])
         for t in reversed(range(self.time_step)):
+            t = torch.tensor(t)
             eps = self(x, t)
             x_t = self.diffusion.backward_step(x_t, t, eps)
         return x_t
@@ -40,9 +41,7 @@ class MLP(pl.LightningModule):
         eps = self.diffusion.make_noise(batch.shape)
         x_t = self.diffusion.forward_process(batch, t, eps)
         predicted_eps = self(x_t, t)
-        L = torch.sqrt(((eps-predicted_eps)**2).sum(2)).sum(-1)
-        loss, _ = torch.var_mean(L)
-        # loss = F.smooth_l1_loss(noise, predicted_noise)
+        loss = F.smooth_l1_loss(eps, predicted_eps)
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -50,8 +49,7 @@ class MLP(pl.LightningModule):
         eps = self.diffusion.make_noise(batch.shape)
         x_t = self.diffusion.forward_process(batch, t, eps)
         predicted_eps = self(x_t, t)
-        L = torch.sqrt(((eps-predicted_eps)**2).sum(2)).sum(-1)
-        loss, _ = torch.var_mean(L)
+        loss = F.smooth_l1_loss(eps, predicted_eps)
         return loss
 
     def configure_optimizers(self):

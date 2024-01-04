@@ -5,11 +5,11 @@ class Diffusion_process():
     def __init__(self, time_step):
         self.time_step = time_step
 
-        self.betas = torch.tensor(np.linspace(0,1,self.time_step+2))[:-1]
-        self.alphas = torch.tensor(1-self.betas)
-        self.alpha_bar = torch.tensor(np.cumprod(self.alphas))
+        self.betas = torch.tensor(np.linspace(0,1,self.time_step+2)[:-1]).requires_grad_(False)
+        self.alphas = torch.tensor(1-self.betas).requires_grad_(False)
+        self.alpha_bar = torch.tensor(np.cumprod(self.alphas)).requires_grad_(False)
 
-    def make_noise(shape):
+    def make_noise(self, shape):
         return torch.randn(shape)
 
     def forward_process(self, x_0, t, noise=None):
@@ -30,7 +30,7 @@ class Diffusion_process():
         b = self.betas[t]
         return a[:, None, None]*x+b[:, None, None]*noise
 
-    def backward_step(x_t, t, eps):
+    def backward_step(self, x_t, t, eps):
         z = torch.zeros_like(x_t)
         if t > 1:
             z = torch.randn_like(x_t)
