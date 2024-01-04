@@ -1,0 +1,21 @@
+dataset:
+  n_sample: 400
+  train_ds:
+    n_dataset: 1000
+
+  valid_ds:
+    n_dataset: 100
+
+model:
+  time_step: 300
+  input_dim: ${dataset.n_sample}
+  hidden_dim: 96
+
+optim:
+  name: "SGD"
+  lr: 1e-3
+
+trainer:
+  epochs: 1000
+  batch: 128
+  seed: 1234
