@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.optim import SGD
 import pytorch_lightning as pl
-from sampling import Diffusion_model
+from sampling import Diffusion_process
 
 class MLP(pl.LightningModule):
     def __init__(self, time_step, input_dim, hidden_dim):
@@ -11,7 +11,7 @@ class MLP(pl.LightningModule):
         self.time_step = time_step
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
-        self.diffusion = Diffusion_model(self.time_step)
+        self.diffusion = Diffusion_process(self.time_step)
 
         self.time_emb = nn.Embedding(self.time_step, 2*self.input_dim)
 
@@ -28,9 +28,16 @@ class MLP(pl.LightningModule):
         x_ = (x.view(-1, 2*self.input_dim)+t_).float()
         return self.layer(x_).view(-1, self.input_dim, 2)
 
+    def generate(self):
+        x_t = self.diffusion.make_noise(batch.shape)
+        for t in reversed(range(self.time_step)):
+            eps = self(x, t)
+            x_t = self.diffusion.backward_step(x_t, t, eps)
+        return x_t
+
     def training_step(self, batch, batch_idx):
         t = torch.randint(1, self.time_step, [batch.shape[0]])
-        eps = Diffusion_model.make_noise(batch.shape)
+        eps = self.diffusion.make_noise(batch.shape)
         x_t = self.diffusion.forward_process(batch, t, eps)
         predicted_eps = self(x_t, t)
         L = torch.sqrt(((eps-predicted_eps)**2).sum(2)).sum(-1)
@@ -40,7 +47,7 @@ class MLP(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         t = torch.randint(1, self.time_step, [batch.shape[0]])
-        eps = Diffusion_model.make_noise(batch.shape)
+        eps = self.diffusion.make_noise(batch.shape)
         x_t = self.diffusion.forward_process(batch, t, eps)
         predicted_eps = self(x_t, t)
         L = torch.sqrt(((eps-predicted_eps)**2).sum(2)).sum(-1)

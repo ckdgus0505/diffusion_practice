@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-class Diffusion_model():
+class Diffusion_process():
     def __init__(self, time_step):
         self.time_step = time_step
 
@@ -29,3 +29,13 @@ class Diffusion_model():
         a = torch.sqrt(1-self.betas[t])
         b = self.betas[t]
         return a[:, None, None]*x+b[:, None, None]*noise
+
+    def backward_step(x_t, t, eps):
+        z = torch.zeros_like(x_t)
+        if t > 1:
+            z = torch.randn_like(x_t)
+
+        a = (1/torch.sqrt(self.alphas[t]))
+        b = (self.betas[t]/torch.sqrt(1-self.alpha_bar[t]))
+        c = (1-self.alpha_bar[t-1])/(1-self.alpha_bar[t])*(self.betas[t])
+        return a[:, None, None]*(x_t-b[:, None, None]*eps)+c[:, None, None]*z
