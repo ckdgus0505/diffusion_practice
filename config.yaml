@@ -7,7 +7,7 @@ dataset:
     n_dataset: 512
 
 model:
-  time_step: 300
+  time_step: 50
   input_dim: 400
   hidden_dim: 96
 

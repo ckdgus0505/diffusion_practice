@@ -6,7 +6,7 @@ class Diffusion_process():
         super().__init__()
         self.time_step = time_step
 
-        self.betas = np.linspace(0,1,self.time_step+1)[:-1]
+        self.betas = np.append(0, np.linspace(1e-4, 0.02, self.time_step))
         self.alphas = 1-self.betas
         self.alpha_bar = np.cumprod(self.alphas)
 
@@ -20,7 +20,7 @@ class Diffusion_process():
             noise = torch.randn_like(x_0, device = x_0.device)
 
         a = torch.sqrt(alpha_bar[t])
-        b = (1-alpha_bar[t])
+        b = torch.sqrt(1-alpha_bar[t])
         return a[:, None, None]*x_0+b[:, None, None]*noise
 
     def forward_step(self, x, t, noise=None):
@@ -43,6 +43,6 @@ class Diffusion_process():
             z = torch.randn_like(x_t).to(x_t.device)
         
         a = (1/torch.sqrt(alphas[t]))
-        b = (betas[t]/torch.sqrt(1-alpha_bar[t]))
+        b = (1-alphas[t]/torch.sqrt(1-alpha_bar[t]))
         c = (1-alpha_bar[t-1])/(1-alpha_bar[t])*(betas[t])
         return a[:, None, None]*(x_t-b[:, None, None]*eps)+c[:, None, None]*z
