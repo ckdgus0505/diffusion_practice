@@ -14,7 +14,7 @@ class MLP(pl.LightningModule):
         self.hidden_dim = cfg["model"]["hidden_dim"]
         self.diffusion = Diffusion_process(self.time_step)
 
-        self.time_emb = nn.Embedding(self.time_step, 2*self.input_dim)
+        self.time_emb = nn.Embedding(self.time_step+1, 2*self.input_dim)
 
         self.layer = nn.Sequential(
             nn.Linear(self.input_dim*2, self.hidden_dim),
