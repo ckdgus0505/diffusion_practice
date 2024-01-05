@@ -14,7 +14,7 @@ class MLP(pl.LightningModule):
         self.hidden_dim = cfg["model"]["hidden_dim"]
         self.diffusion = Diffusion_process(self.time_step)
 
-        self.time_emb = nn.Embedding(self.time_step, 2*self.input_dim)
+        self.time_emb = nn.Embedding(self.time_step+1, 2*self.input_dim)
 
         self.layer = nn.Sequential(
             nn.Linear(self.input_dim*2, self.hidden_dim),
@@ -31,7 +31,7 @@ class MLP(pl.LightningModule):
 
     def forward(self, x, t):
         t_ = self.time_emb(torch.tensor(t).to(self.device))
-        x_ = (x.view(-1, 2*self.input_dim)+t_).float()
+        x_ = (x.view(-1, 2*self.input_dim)+t_)
         return self.layer(x_).view(-1, self.input_dim, 2)
 
     def generate(self, N=1):
@@ -43,6 +43,7 @@ class MLP(pl.LightningModule):
         return x_t
 
     def training_step(self, batch, batch_idx):
+        batch=batch.float()
         t = torch.randint(1, self.time_step+1, [batch.shape[0]]).to(self.device)
         eps = self.diffusion.make_noise(batch.shape).to(self.device)
         x_t = self.diffusion.forward_process(batch, t, eps)
@@ -57,6 +58,7 @@ class MLP(pl.LightningModule):
         self.training_step_outputs=0
 
     def validation_step(self, batch, batch_idx):
+        batch=batch.float()
         t = torch.randint(1, self.time_step+1, [batch.shape[0]]).to(self.device)
         eps = self.diffusion.make_noise(batch.shape).to(self.device)
         x_t = self.diffusion.forward_process(batch, t, eps)
