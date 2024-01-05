@@ -10,6 +10,8 @@ class MLP(pl.LightningModule):
 
         self.training_step_outputs = 0
         self.val_step_outputs = 0
+        self.n_training_batch=0
+        self.n_val_batch=0
 
         self.time_step = time_step
         self.input_dim = input_dim
@@ -27,42 +29,44 @@ class MLP(pl.LightningModule):
         )
 
     def forward(self, x, t):
-        t_ = self.time_emb(torch.tensor(t))
+        t_ = self.time_emb(torch.tensor(t).to(self.device))
         x_ = (x.view(-1, 2*self.input_dim)+t_).float()
         return self.layer(x_).view(-1, self.input_dim, 2)
 
     def generate(self, N=1):
-        x_t = self.diffusion.make_noise([N, self.input_dim, 2])
+        x_t = self.diffusion.make_noise([N, self.input_dim, 2]).to(self.device)
         for t in reversed(range(self.time_step)):
-            t = torch.tensor(t)
-            eps = self(x, t)
+            t = torch.tensor(t).to(self.device)
+            eps = self(x_t, t)
             x_t = self.diffusion.backward_step(x_t, t, eps)
         return x_t
 
     def training_step(self, batch, batch_idx):
-        t = torch.randint(1, self.time_step, [batch.shape[0]])
-        eps = self.diffusion.make_noise(batch.shape)
+        t = torch.randint(1, self.time_step, [batch.shape[0]]).to(self.device)
+        eps = self.diffusion.make_noise(batch.shape).to(self.device)
         x_t = self.diffusion.forward_process(batch, t, eps)
         predicted_eps = self(x_t, t)
         loss = F.smooth_l1_loss(eps, predicted_eps)
         self.training_step_outputs+=loss.item()
+        self.n_training_batch = max(self.n_training_batch, batch_idx+1)
         return loss
     
     def on_train_epoch_end(self):
-        self.log("training_loss_epoch", self.training_step_outputs, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("training_loss_epoch", self.training_step_outputs/self.n_training_batch, on_step=False, on_epoch=True, prog_bar=True)
         self.training_step_outputs=0
 
     def validation_step(self, batch, batch_idx):
-        t = torch.randint(1, self.time_step, [batch.shape[0]])
-        eps = self.diffusion.make_noise(batch.shape)
+        t = torch.randint(1, self.time_step, [batch.shape[0]]).to(self.device)
+        eps = self.diffusion.make_noise(batch.shape).to(self.device)
         x_t = self.diffusion.forward_process(batch, t, eps)
         predicted_eps = self(x_t, t)
         loss = F.smooth_l1_loss(eps, predicted_eps)
         self.val_step_outputs+=loss.item()
+        self.n_val_batch = max(self.n_val_batch, batch_idx+1)
         return loss
 
     def on_validation_epoch_end(self):
-        self.log("validation_loss_epoch", self.val_step_outputs, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("validation_loss_epoch", self.val_step_outputs/self.n_val_batch, on_step=False, on_epoch=True, prog_bar=True)
         self.val_step_outputs=0
 
     def configure_optimizers(self):

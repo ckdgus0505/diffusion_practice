@@ -3,39 +3,46 @@ import torch
 
 class Diffusion_process():
     def __init__(self, time_step):
+        super().__init__()
         self.time_step = time_step
 
-        self.betas = torch.tensor(np.linspace(0,1,self.time_step+2)[:-1]).requires_grad_(False)
-        self.alphas = torch.tensor(1-self.betas).requires_grad_(False)
-        self.alpha_bar = torch.tensor(np.cumprod(self.alphas)).requires_grad_(False)
+        self.betas = np.linspace(0,1,self.time_step+1)[:-1]
+        self.alphas = 1-self.betas
+        self.alpha_bar = np.cumprod(self.alphas)
 
     def make_noise(self, shape):
         return torch.randn(shape)
 
     def forward_process(self, x_0, t, noise=None):
+        alpha_bar = torch.tensor(self.alpha_bar, device=x_0.device)
         batch_size, n_point, _ = x_0.shape
         if noise == None:
-            noise = torch.randn_like(x_0)
+            noise = torch.randn_like(x_0, device = x_0.device)
 
-        a = torch.sqrt(self.alpha_bar[t])
-        b = (1-self.alpha_bar[t])
+        a = torch.sqrt(alpha_bar[t])
+        b = (1-alpha_bar[t])
         return a[:, None, None]*x_0+b[:, None, None]*noise
 
     def forward_step(self, x, t, noise=None):
+        betas = torch.tensor(self.betas, device=x.device)
         batch_size, n_point, _ = x.shape
         if noise == None:
-            noise = torch.randn_like(x)
+            noise = torch.randn_like(x, device = x.device)
 
-        a = torch.sqrt(1-self.betas[t])
-        b = self.betas[t]
+        a = torch.sqrt(1-betas[t])
+        b = betas[t]
         return a[:, None, None]*x+b[:, None, None]*noise
 
     def backward_step(self, x_t, t, eps):
-        z = torch.zeros_like(x_t)
-        if t > 1:
-            z = torch.randn_like(x_t)
-
-        a = (1/torch.sqrt(self.alphas[t]))
-        b = (self.betas[t]/torch.sqrt(1-self.alpha_bar[t]))
-        c = (1-self.alpha_bar[t-1])/(1-self.alpha_bar[t])*(self.betas[t])
+        betas = torch.tensor(self.betas, device=x_t.device)
+        alphas = torch.tensor(self.alphas, device=x_t.device)
+        alpha_bar = torch.tensor(self.alpha_bar, device=x_t.device)
+        if t == 0:
+            z = torch.zeros_like(x_t).to(x_t.device)
+        else :
+            z = torch.randn_like(x_t).to(x_t.device)
+        
+        a = (1/torch.sqrt(alphas[t]))
+        b = (betas[t]/torch.sqrt(1-alpha_bar[t]))
+        c = (1-alpha_bar[t-1])/(1-alpha_bar[t])*(betas[t])
         return a[:, None, None]*(x_t-b[:, None, None]*eps)+c[:, None, None]*z
