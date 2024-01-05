@@ -26,7 +26,7 @@ def main():
 
     train_set = SpiralDataset(cfg["dataset"]["train_ds"]["n_dataset"], cfg["dataset"]["n_sample"], save_data=False, data_path=None)
     valid_set = SpiralDataset(cfg["dataset"]["valid_ds"]["n_dataset"], cfg["dataset"]["n_sample"], save_data=True, data_path="valid")
-    train_loader = DataLoader(train_set, batch_size=cfg["trainer"]["batch"]tch, drop_last=True, shuffle=True, num_workers=1)
+    train_loader = DataLoader(train_set, batch_size=cfg["trainer"]["batch"], drop_last=True, shuffle=True, num_workers=1)
     valid_loader = DataLoader(valid_set, batch_size=cfg["trainer"]["batch"], drop_last=True, shuffle=True, num_workers=1)
 
     trainer = pl.Trainer(max_epochs=cfg["trainer"]["epochs"], check_val_every_n_epoch=1)
