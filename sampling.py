@@ -37,7 +37,7 @@ class Diffusion_process():
         betas = torch.tensor(self.betas, device=x_t.device)
         alphas = torch.tensor(self.alphas, device=x_t.device)
         alpha_bar = torch.tensor(self.alpha_bar, device=x_t.device)
-        if t == 0:
+        if t == 1:
             z = torch.zeros_like(x_t).to(x_t.device)
         else :
             z = torch.randn_like(x_t).to(x_t.device)

@@ -5,17 +5,13 @@ import pytorch_lightning as pl
 from sampling import Diffusion_process
 
 class MLP(pl.LightningModule):
-    def __init__(self, time_step, input_dim, hidden_dim):
+    def __init__(self, cfg):
         super().__init__()
 
-        self.training_step_outputs = 0
-        self.val_step_outputs = 0
-        self.n_training_batch=0
-        self.n_val_batch=0
-
-        self.time_step = time_step
-        self.input_dim = input_dim
-        self.hidden_dim = hidden_dim
+        self.save_hyperparameters(cfg)
+        self.time_step = cfg["model"]["time_step"]
+        self.input_dim = cfg["model"]["input_dim"]
+        self.hidden_dim = cfg["model"]["hidden_dim"]
         self.diffusion = Diffusion_process(self.time_step)
 
         self.time_emb = nn.Embedding(self.time_step, 2*self.input_dim)
@@ -27,6 +23,11 @@ class MLP(pl.LightningModule):
             nn.ReLU(),
             nn.Linear(self.hidden_dim, self.input_dim*2)
         )
+
+        self.training_step_outputs = 0
+        self.val_step_outputs = 0
+        self.n_training_batch=0
+        self.n_val_batch=0
 
     def forward(self, x, t):
         t_ = self.time_emb(torch.tensor(t).to(self.device))
@@ -42,7 +43,7 @@ class MLP(pl.LightningModule):
         return x_t
 
     def training_step(self, batch, batch_idx):
-        t = torch.randint(1, self.time_step, [batch.shape[0]]).to(self.device)
+        t = torch.randint(1, self.time_step+1, [batch.shape[0]]).to(self.device)
         eps = self.diffusion.make_noise(batch.shape).to(self.device)
         x_t = self.diffusion.forward_process(batch, t, eps)
         predicted_eps = self(x_t, t)
@@ -56,7 +57,7 @@ class MLP(pl.LightningModule):
         self.training_step_outputs=0
 
     def validation_step(self, batch, batch_idx):
-        t = torch.randint(1, self.time_step, [batch.shape[0]]).to(self.device)
+        t = torch.randint(1, self.time_step+1, [batch.shape[0]]).to(self.device)
         eps = self.diffusion.make_noise(batch.shape).to(self.device)
         x_t = self.diffusion.forward_process(batch, t, eps)
         predicted_eps = self(x_t, t)

@@ -20,11 +20,7 @@ def main():
     with open('config.yaml') as file:
         cfg = yaml.safe_load(file)
 
-    epochs = cfg["trainer"]["epochs"]
-    batch = cfg["trainer"]["batch"]
-    set_seed(cfg["trainer"]["seed"])
-
-    model = MLP(cfg["model"]["time_step"], cfg["model"]["input_dim"], cfg["model"]["hidden_dim"])
+    model = MLP(cfg)
 
     train_set = SpiralDataset(cfg["dataset"]["train_ds"]["n_dataset"], cfg["dataset"]["n_sample"], save_data=False, data_path=None)
     valid_set = SpiralDataset(cfg["dataset"]["valid_ds"]["n_dataset"], cfg["dataset"]["n_sample"], save_data=True, data_path="valid")
